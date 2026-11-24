@@ -197,13 +197,25 @@ div {
             window.addEventListener('message', fn, false);
         }
 
+        //Loading is reported to the host in two steps, with the "Status" field Collabora
+        //introduced and under Collabora's names, so one host can treat both suites alike:
+        //"Frame_Ready" when the editor's shell is up (onAppReady) and "Document_Loaded" when
+        //the document itself is drawn and can be worked on (onDocumentReady). Document_Loaded
+        //used to be sent from onAppReady, seconds before the document was there, so a host
+        //that ends its own spinner on it showed an empty editor in between.
         var onAppReady = function () {
-            //Collabora extension field "Status"
+            _postMessage('App_LoadingStatus', {
+                "Status": "Frame_Ready"
+            });
+            innerAlert("App ready");
+        };
+
+        var onDocumentReady = function () {
             _postMessage('App_LoadingStatus', {
                 "DocumentLoadedTime": Date.now() - startTime,
                 "Status": "Document_Loaded"
             });
-            innerAlert("App ready");
+            innerAlert("Document ready");
         };
 
         var sendEditNotification = function () {
@@ -441,8 +453,7 @@ div {
                             "name": fileInfo.BreadcrumbBrandName,
                             "www": fileInfo.BreadcrumbBrandUrl
                         },
-                        "submitForm": customizationFormSubmit && customizationSaveAs,
-                        "uiTheme": queryParams.thm==="1" ? "default-light" : (queryParams.thm==="2" ? "default-dark" : undefined)
+                        "submitForm": customizationFormSubmit && customizationSaveAs
 					},
                     "coEditing": {
                         "mode": userAuth.mode !== "view" ? "fast" : "strict"
@@ -455,6 +466,7 @@ div {
 				},
 				"events": {
                     "onAppReady": onAppReady,
+                    "onDocumentReady": onDocumentReady,
                     "onDocumentStateChange": fileInfo.EditNotificationPostMessage ? onDocumentStateChange : undefined,
                     'onRequestEditRights': fileInfo.EditModePostMessage || fileInfo.HostEditUrl ? onRequestEditRights : undefined,
                     'onRequestSaveAs': customizationSaveAs ? onRequestSaveAs : undefined,
@@ -475,6 +487,17 @@ div {
                     "onMakeActionLink": fileInfo.UserMentionPostMessage ? onMakeActionLink : undefined
                 }
 			});
+
+            //The address can name one of the two stock themes (thm=1 light, thm=2 dark). Set
+            //after the merges and only when it is present, so that without it the theme the
+            //host named in docs_api_config (customization.uiTheme, which may be a theme of the
+            //host's own from the themes folder) is kept instead of being overwritten with
+            //undefined.
+            if (queryParams.thm === "1") {
+                config.editorConfig.customization.uiTheme = "default-light";
+            } else if (queryParams.thm === "2") {
+                config.editorConfig.customization.uiTheme = "default-dark";
+            }
 
             //Deep link into a comment/bookmark: the other half of onMakeActionLink and of the
             //mention notifications. Set after the merges rather than inside them, so an absent
