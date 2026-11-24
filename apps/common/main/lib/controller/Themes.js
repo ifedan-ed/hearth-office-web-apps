@@ -279,6 +279,17 @@ define([
         const check_launched_custom_theme = function () {
             let theme_id = window.uitheme.id;
             if ( themes_map[theme_id] ) {
+                // A theme from the server's list (themes.json) that the editor was started
+                // with, by the host's uiTheme setting or an earlier choice, still has its
+                // colours unwritten in `src`: only apply_theme writes them, and that used to
+                // run only when the theme was picked from the menu. Without this the editor
+                // carried the theme's name over the stock colours, and stored those stock
+                // colours under the theme's name for later sessions.
+                if ( themes_map[theme_id].src && this && this.api ) {
+                    apply_theme.call(this, theme_id);
+                    return;
+                }
+
                 if ( themes_map[theme_id].source != 'static') {
                     const m = document.body.className.match('theme-type-' + themes_map[theme_id].type);
                     if ( !m )
@@ -316,7 +327,7 @@ define([
                 function ( obj ) {
                     if ( obj != 'error' ) {
                         parse_themes_object(obj);
-                        check_launched_custom_theme();
+                        check_launched_custom_theme.call(me);
                     } else {
                         console.warn('failed to load/parse themes.json');
                     }
@@ -331,7 +342,7 @@ define([
             else
             if ( Common.Controllers.Desktop.localThemes() ) {
                 parse_themes_object({'themes': Common.Controllers.Desktop.localThemes()});
-                check_launched_custom_theme();
+                check_launched_custom_theme.call(this);
             }
         }
 
