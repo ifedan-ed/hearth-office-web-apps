@@ -211,6 +211,7 @@ div {
         };
 
         var onDocumentReady = function () {
+            documentLoaded = true;
             _postMessage('App_LoadingStatus', {
                 "DocumentLoadedTime": Date.now() - startTime,
                 "Status": "Document_Loaded"
@@ -321,9 +322,27 @@ div {
             });
         };
 
+        //A document the converter could not read (damaged, or not what its name says) is
+        //reported to the host as Collabora reports a failed load, Action_Load_Resp with
+        //success false, so a host can offer to repair a copy. Only before the document is
+        //there, and only for the two open errors: ConvertationOpenError (-82) and
+        //ConvertationOpenFormat (-85). A lost connection or a size limit is not the file's
+        //fault and is left to the editor's own message.
+        var documentLoaded = false;
+        var openErrors = [-82, -85];
+
         var onError = function (event) {
-            if (event)
-                innerAlert(event.data);
+            if (!event)
+                return;
+            innerAlert(event.data);
+            var code = event.data && event.data.errorCode;
+            if (!documentLoaded && openErrors.indexOf(code) >= 0) {
+                _postMessage('Action_Load_Resp', {
+                    "success": false,
+                    "errorCode": code,
+                    "errorMsg": event.data.errorDescription || ""
+                });
+            }
         };
 
         var onOutdatedVersion = function () {
