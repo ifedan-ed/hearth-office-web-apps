@@ -24,6 +24,7 @@ import { StatusbarController } from "./Statusbar";
 import { Device } from '../../../../common/mobile/utils/device';
 import { Themes } from '../../../../common/mobile/lib/controller/Themes.jsx';
 import { processArrayScripts } from '../../../../common/mobile/utils/processArrayScripts.js';
+import { keysAfterModals } from '../../../../common/mobile/utils/keysAfterModals.js';
 import '../../../../common/main/lib/util/LanguageInfo.js'
 
 @inject(
@@ -449,6 +450,8 @@ class MainController extends Component {
         $$(window).on('popover:open popup:open sheet:open actions:open searchbar:enable', () => {
             this.api.asc_enableKeyEvents(false);
         });
+        // Hearth: and back on when the last one closes (keysAfterModals).
+        keysAfterModals(this.api, () => this.props.storeAppOptions.isEdit);
 
         this.api.asc_registerCallback('asc_onDocumentContentReady',       this.onDocumentContentReady.bind(this));
         this.api.asc_registerCallback('asc_onDocumentUpdateVersion',      this.onUpdateVersion.bind(this));

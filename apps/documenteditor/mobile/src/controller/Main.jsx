@@ -21,6 +21,7 @@ import DropdownListController from "./DropdownList";
 import AddFormImageController from './add/AddFormImage.jsx';
 import { Device } from '../../../../common/mobile/utils/device';
 import { processArrayScripts } from '../../../../common/mobile/utils/processArrayScripts.js';
+import { keysAfterModals } from '../../../../common/mobile/utils/keysAfterModals.js';
 import '../../../../common/main/lib/util/LanguageInfo.js'
 @inject(
     "users",
@@ -841,6 +842,11 @@ class MainController extends Component {
 
         $$(window).on('popover:open popup:open sheet:open actions:open dialog:open searchbar:enable', () => {
             this.api.asc_enableKeyEvents(false);
+        });
+        // Hearth: and back on when the last one closes (keysAfterModals).
+        keysAfterModals(this.api, () => {
+            const appOptions = this.props.storeAppOptions;
+            return appOptions.isEdit && !appOptions.isViewer;
         });
 
         this.api.asc_registerCallback('asc_onDocumentUpdateVersion', this.onUpdateVersion.bind(this));
